@@ -6,9 +6,9 @@ ARG PASSWORD
 ENV BASIC_AUTH_USERNAME=$USERNAME
 ENV BASIC_AUTH_PASSWORD=$PASSWORD
 
-COPY ./requirements.txt /usr/requirements.txt
-
 WORKDIR /usr
+
+COPY ./requirements.txt /usr/requirements.txt
 
 RUN pip3 install -r requirements.txt
 

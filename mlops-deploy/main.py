@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-import pandas as pd
+# -*- coding: utf-8
 import numpy as np
-from sklearn.model_selection import train_test_split
 import xgboost as xgb
 import pickle
 import os
@@ -19,48 +17,54 @@ basic_auth = BasicAuth(app)
 
 # Antes das APIs
 colunas = ['RevolvingUtilizationOfUnsecuredLines', 'age',
-       'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome',
-       'NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate',
-       'NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse',
-       'NumberOfDependents', 'IncomePerPerson', 'NumOfPastDue', 'MonthlyDebt',
-       'NumOfOpenCreditLines', 'MonthlyBalance', 'age_sqr']
+           'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome',
+           'NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate',
+           'NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse',
+           'NumberOfDependents', 'IncomePerPerson', 'NumOfPastDue', 'MonthlyDebt',
+           'NumOfOpenCreditLines', 'MonthlyBalance', 'age_sqr']
 
-def load_model(file_name = 'xgboost_undersampling.pkl'):
+
+def load_model(file_name='xgboost_undersampling.pkl'):
     return pickle.load(open(file_name, "rb"))
 
+
 # Carregar modelo treinado
-modelo = load_model('models/xgboost_undersampling.pkl')
+modelo = load_model('./models/xgboost_undersampling.pkl')
 
 # Rota de predição de scores
+
+
 @app.route('/score/', methods=['POST'])
 @basic_auth.required
 def get_score():
     # Pegar o JSON da requisição
     dados = request.get_json()
+
     # Garantir a ordem das colunas
     payload = np.array([dados[col] for col in colunas])
+
     # Fazer predição
     payload = xgb.DMatrix([payload], feature_names=colunas)
     score = np.float64(modelo.predict(payload)[0])
-    status = 'APROVADO'
-    if score <= 0.3:
-        status = 'REPROVADO'
-    elif score <= 0.6: 
-        status = 'MESA DE AVALIACAO'
+    status = 'APROVADO' if score <= 0.35 else 'REPROVADO'
     return jsonify(cpf=dados['cpf'], score=score, status=status)
 
 # Nova rota - recebendo CPF
+
+
 @app.route('/score/<cpf>')
 @basic_auth.required
 def show_cpf(cpf):
-    return 'Recebendo dados\nCPF: %s'%cpf
+    return 'Recebendo dados\nCPF: %s' % cpf
 
 # Rota padrão
+
+
 @app.route('/')
 def home():
     return 'API de predição de credito'
 
+
 # Subir a API
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
-
